@@ -1,11 +1,10 @@
-import React from 'react';
 import { MusicNoteIcon } from '@heroicons/react/solid';
 
 const PlaylistPage = () => {
   const videos = [
-    { title: 'Song 1', url: 'https://www.youtube.com/embed/song1' },
-    { title: 'Song 2', url: 'https://www.youtube.com/embed/song2' },
-    { title: 'Song 3', url: 'https://www.youtube.com/embed/song3' },
+    { title: 'Johnny Drille - Count My Blessings', url: "https://www.youtube.com/embed/ZAwQ-TJFEO8?list=RDZAwQ-TJFEO8" },
+    { title: 'Lil Uzi Vert - The Way Life Goes Remix (Feat. Nicki Minaj)', url: 'https://www.youtube.com/embed/SxAp27sFaIM?list=RDGMEMHDXYb1_DDSgDsobPsOFxpA' },
+    { title: 'Ayra Starr - Rush', url: "https://www.youtube.com/embed/crtQSTYWtqE?list=RDGMEMHDXYb1_DDSgDsobPsOFxpA" },
   ];
 
   return (
@@ -20,7 +19,7 @@ const PlaylistPage = () => {
             <h3 className="text-lg font-semibold mb-2 font-poppins">{video.title}</h3>
             <iframe
               width="100%"
-              height="200"
+              height="300"
               src={video.url}
               title={video.title}
               frameBorder="0"
