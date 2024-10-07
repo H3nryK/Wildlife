@@ -2,10 +2,11 @@
 import tensorflow as tf
 from keras.src.models import Sequential
 from keras.src.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from keras.src.preprocessing.image import ImageDataGenerator
+from keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import os
 
 # Function to build the CNN model
 def build_cnn_model(input_shape=(64, 64, 3), num_classes=10):
@@ -39,12 +40,22 @@ train_datagen = ImageDataGenerator(rescale=1./255, shear_range=0.2, zoom_range=0
 validation_datagen = ImageDataGenerator(rescale=1./255)
 
 # Directory paths for your dataset (update these paths)
-train_dir = 'path/to/train'
-validation_dir = 'path/to/validation'
+train_dir = 'path/to/train'  # Update to your train directory
+validation_dir = 'path/to/validation'  # Update to your validation directory
 
 # Loading the dataset
-train_set = train_datagen.flow_from_directory(train_dir, target_size=(64, 64), batch_size=32, class_mode='categorical')
-validation_set = validation_datagen.flow_from_directory(validation_dir, target_size=(64, 64), batch_size=32, class_mode='categorical')
+train_set = train_datagen.flow_from_directory(
+    train_dir, 
+    target_size=(64, 64), 
+    batch_size=32, 
+    class_mode='categorical'
+)
+validation_set = validation_datagen.flow_from_directory(
+    validation_dir, 
+    target_size=(64, 64), 
+    batch_size=32, 
+    class_mode='categorical'
+)
 
 # Build and compile the model
 model = build_cnn_model(input_shape=(64, 64, 3), num_classes=train_set.num_classes)
@@ -83,6 +94,9 @@ plot_history(history)
 def predict_species(image_path, model, classes):
     # Load the image and resize it to match the model's input shape
     image = cv2.imread(image_path)
+    if image is None:
+        print("Error: Image not found or invalid image path")
+        return
     image = cv2.resize(image, (64, 64))
     image = np.expand_dims(image, axis=0) / 255.0  # Rescale as in training
 
@@ -98,4 +112,6 @@ classes = list(train_set.class_indices.keys())  # Get class names from training 
 predict_species('path/to/new_image.jpg', model, classes)
 
 # Save the model after training
-model.save('wildlife_cnn_model.h5')
+if not os.path.exists('models'):
+    os.makedirs('models')
+model.save('models/wildlife_cnn_model.h5')
