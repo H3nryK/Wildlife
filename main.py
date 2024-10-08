@@ -1,117 +1,160 @@
-# Import necessary libraries
-import tensorflow as tf
-from keras.src.models import Sequential
-from keras.src.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from keras.preprocessing.image import ImageDataGenerator
 import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import os
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+import hashlib
+import time
+from flask import Flask, jsonify, request
 
-# Function to build the CNN model
-def build_cnn_model(input_shape=(64, 64, 3), num_classes=10):
-    model = Sequential()
+# Generating sample data for species population trends
+def generate_sample_data(num_species=100):
+    np.random.seed(42)  # For reproducibility
+    species_data = {
+        'species_name': [f'Species {i}' for i in range(1, num_species + 1)],
+        'population': np.random.randint(50, 1000, size=num_species),
+        'habitat_loss': np.random.randint(0, 100, size=num_species),
+        'poaching': np.random.randint(0, 50, size=num_species),
+        'reproduction_rate': np.random.uniform(0.01, 0.3, size=num_species),
+        'species_health': np.random.choice([0, 1], size=num_species, p=[0.4, 0.6])
+    }
+    df = pd.DataFrame(species_data)
+    df.to_csv('species_population_data.csv', index=False)
+
+# Generate sample data
+generate_sample_data(100)
+
+# Load the data
+data = pd.read_csv('species_population_data.csv')
+
+# Preprocessing the data
+features = data.drop(['species_name', 'species_health'], axis=1)
+labels = data['species_health']
+
+# Scaling the features
+scaler = StandardScaler()
+features_scaled = scaler.fit_transform(features)
+
+# Splitting the dataset
+X_train, X_test, y_train, y_test = train_test_split(features_scaled, labels, test_size=0.2, random_state=42)
+
+# AI Model for real-time monitoring
+model = RandomForestClassifier(n_estimators=100)
+model.fit(X_train, y_train)
+
+# Cross-validation
+cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+print(f'Cross-Validation Accuracy: {np.mean(cv_scores) * 100:.2f}%')
+
+# Predicting species health
+predictions = model.predict(X_test)
+accuracy = accuracy_score(y_test, predictions)
+print(f'Model Accuracy: {accuracy * 100:.2f}%')
+
+# Display predictions
+predicted_health = pd.DataFrame({'Actual': y_test, 'Predicted': predictions})
+print(predicted_health)
+
+# Blockchain integration for secure contributions
+class ConservationBlockchain:
+    def __init__(self):
+        self.chain = []
+        self.contributions = []
+        self.create_block(previous_hash='1', proof=100)
+
+    def create_block(self, proof, previous_hash):
+        block = {
+            'index': len(self.chain) + 1,
+            'proof': proof,
+            'previous_hash': previous_hash,
+            'timestamp': time.time()
+        }
+        self.chain.append(block)
+        return block
+
+    def add_contribution(self, contributor, amount):
+        contribution = {
+            'contributor': contributor,
+            'amount': amount,
+            'block_index': len(self.chain) + 1,
+            'timestamp': time.time()
+        }
+        self.contributions.append(contribution)
+        print(f"Contribution added: {contribution}")
+        return contribution
+
+    def hash(self, block):
+        block_string = str(block).encode()
+        return hashlib.sha256(block_string).hexdigest()
+
+# Tokenization of wildlife
+def tokenize_wildlife(species_name, value):
+    token = {
+        'species_name': species_name,
+        'token_value': value,
+        'timestamp': pd.Timestamp.now()
+    }
+    print(f"Token created: {token}")
+    return token
+
+# Empowering communities
+def empower_communities(community_data):
+    print("Empowering communities with the following data:")
+    for community in community_data:
+        print(community)
+
+# Flask API for interaction
+app = Flask(__name__)
+
+@app.route('/predict', methods=['POST'])
+def predict_species_health():
+    input_data = request.get_json()
+    input_df = pd.DataFrame(input_data)
+    input_scaled = scaler.transform(input_df)
+    predictions = model.predict(input_scaled)
+    return jsonify(predictions.tolist())
+
+@app.route('/contribute', methods=['POST'])
+def contribute():
+    data = request.get_json()
+    contributor = data.get('contributor')
+    amount = data.get('amount')
+    blockchain.add_contribution(contributor, amount)
+    return jsonify({"message": "Contribution added successfully."})
+
+if __name__ == "__main__":
+    # Generate sample data and train model
+    generate_sample_data(100)  # Create data for 100 species
     
-    # Convolutional Layer 1
-    model.add(Conv2D(32, (3, 3), activation='relu', input_shape=input_shape))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    
-    # Convolutional Layer 2
-    model.add(Conv2D(64, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    
-    # Convolutional Layer 3
-    model.add(Conv2D(128, (3, 3), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    
-    # Flattening the layers
-    model.add(Flatten())
-    
-    # Fully connected layer
-    model.add(Dense(128, activation='relu'))
-    model.add(Dropout(0.5))  # Dropout for regularization
-    model.add(Dense(num_classes, activation='softmax'))
-    
-    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    return model
+    data = pd.read_csv('species_population_data.csv')
+    features = data.drop(['species_name', 'species_health'], axis=1)
+    labels = data['species_health']
 
-# Image data generators for training and validation sets
-train_datagen = ImageDataGenerator(rescale=1./255, shear_range=0.2, zoom_range=0.2, horizontal_flip=True)
-validation_datagen = ImageDataGenerator(rescale=1./255)
+    features_scaled = scaler.fit_transform(features)
+    X_train, X_test, y_train, y_test = train_test_split(features_scaled, labels, test_size=0.2, random_state=42)
 
-# Directory paths for your dataset (update these paths)
-train_dir = 'path/to/train'  # Update to your train directory
-validation_dir = 'path/to/validation'  # Update to your validation directory
+    model = RandomForestClassifier(n_estimators=100)
+    model.fit(X_train, y_train)
 
-# Loading the dataset
-train_set = train_datagen.flow_from_directory(
-    train_dir, 
-    target_size=(64, 64), 
-    batch_size=32, 
-    class_mode='categorical'
-)
-validation_set = validation_datagen.flow_from_directory(
-    validation_dir, 
-    target_size=(64, 64), 
-    batch_size=32, 
-    class_mode='categorical'
-)
+    predictions = model.predict(X_test)
+    accuracy = accuracy_score(y_test, predictions)
+    print(f'Model Accuracy: {accuracy * 100:.2f}%')
 
-# Build and compile the model
-model = build_cnn_model(input_shape=(64, 64, 3), num_classes=train_set.num_classes)
+    # Blockchain integration demonstration
+    blockchain = ConservationBlockchain()
+    blockchain.add_contribution(contributor="John Doe", amount=100)
 
-# Train the model
-history = model.fit(
-    train_set,
-    steps_per_epoch=len(train_set),
-    epochs=20,
-    validation_data=validation_set,
-    validation_steps=len(validation_set)
-)
+    # Tokenization demonstration
+    token = tokenize_wildlife("Species 1", value=1500)
 
-# Plotting accuracy and loss over epochs
-def plot_history(history):
-    # Accuracy plot
-    plt.plot(history.history['accuracy'], label='train accuracy')
-    plt.plot(history.history['val_accuracy'], label='validation accuracy')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend()
-    plt.show()
-    
-    # Loss plot
-    plt.plot(history.history['loss'], label='train loss')
-    plt.plot(history.history['val_loss'], label='validation loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.show()
+    # Community engagement demonstration
+    community_data = [
+        {"name": "Community 1", "engagement": "Organized a cleanup"},
+        {"name": "Community 2", "engagement": "Conducted awareness campaign"},
+        {"name": "Community 3", "engagement": "Planted trees in the local area"},
+    ]
+    empower_communities(community_data)
 
-# Plot training history
-plot_history(history)
-
-# Function to predict the species in a new image
-def predict_species(image_path, model, classes):
-    # Load the image and resize it to match the model's input shape
-    image = cv2.imread(image_path)
-    if image is None:
-        print("Error: Image not found or invalid image path")
-        return
-    image = cv2.resize(image, (64, 64))
-    image = np.expand_dims(image, axis=0) / 255.0  # Rescale as in training
-
-    # Predict
-    predictions = model.predict(image)
-    class_index = np.argmax(predictions)
-    class_name = classes[class_index]
-    
-    print(f"Predicted Species: {class_name}")
-
-# Usage example (update image path)
-classes = list(train_set.class_indices.keys())  # Get class names from training set
-predict_species('path/to/new_image.jpg', model, classes)
-
-# Save the model after training
-if not os.path.exists('models'):
-    os.makedirs('models')
-model.save('models/wildlife_cnn_model.h5')
+    # Run the Flask app
+    app.run(debug=True)
